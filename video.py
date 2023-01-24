@@ -4,7 +4,7 @@ import sys
 import imageio
 import numpy as np
 
-import utils
+import TED.utils as utils
 
 
 class VideoRecorder(object):

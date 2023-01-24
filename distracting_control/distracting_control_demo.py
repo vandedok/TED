@@ -20,7 +20,7 @@ from absl import flags
 
 import PIL
 
-from distracting_control import suite
+from TED.distracting_control import suite
 
 FLAGS = flags.FLAGS
 

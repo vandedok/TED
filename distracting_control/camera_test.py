@@ -25,7 +25,7 @@ from dm_control.suite import cartpole
 from dm_control.suite.wrappers import pixels
 import numpy as np
 
-from distracting_control import camera
+from TED.distracting_control import camera
 
 
 def get_camera_params(domain_name, scale, dynamic):

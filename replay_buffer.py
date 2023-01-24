@@ -2,7 +2,7 @@ import numpy as np
 import kornia
 import torch
 import torch.nn as nn
-from algorithms.svea import random_conv
+from TED.algorithms.svea import random_conv
 
 class ReplayBuffer(object):
     """Buffer to store environment transitions."""

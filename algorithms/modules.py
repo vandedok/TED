@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import utils
+import TED.utils as utils
 
 class Encoder(nn.Module):
     """Convolutional encoder for image-based observations."""

@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
-import utils
-from algorithms.sac import SAC
+import TED.utils as utils
+from TED.algorithms.sac import SAC
 
 def random_conv(x):
 	"""Applies a random conv2d as per SVEA implementation: https://github.com/nicklashansen/dmcontrol-generalization-benchmark"""

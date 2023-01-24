@@ -1,6 +1,6 @@
 from gym import core, spaces
 #from dm_control import suite
-from distracting_control import suite
+from TED.distracting_control import suite
 from dm_env import specs
 import numpy as np
 

@@ -18,7 +18,7 @@
 from absl.testing import absltest
 from absl.testing import parameterized
 import mock
-from distracting_control import suite
+from TED.distracting_control import suite
 
 DAVIS_PATH = '/tmp/davis'
 

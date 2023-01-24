@@ -1,17 +1,21 @@
 import os
 import time
-import dmc2gym
-import torch
-import utils
-from logger import Logger
-from replay_buffer import ReplayBuffer
-from video import VideoRecorder
-import algorithms
-from arguments import parse_args
 import datetime
+import torch
+import TED.dmc2gym as dmc2gym
+import TED.utils as utils 
+from TED.logger import Logger
+from TED.replay_buffer import ReplayBuffer
+from TED.video import VideoRecorder
+import TED.algorithms as algorithms
+from TED.arguments import parse_args
+
 
 torch.backends.cudnn.benchmark = True
 
+def try_import():
+    print(dmc2gym.make)
+    
 def make_env(cfg, test=False):
     # per dreamer: https://github.com/danijar/dreamer/blob/02f0210f5991c7710826ca7881f19c64a012290c/wrappers.py#L26
     camera_id = 2 if cfg.domain_name == 'quadruped' else 0

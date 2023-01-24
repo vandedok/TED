@@ -1,7 +1,7 @@
-from algorithms.sac import SAC
-from algorithms.rad import RAD
-from algorithms.drq import DrQ
-from algorithms.svea import SVEA
+from TED.algorithms.sac import SAC
+from TED.algorithms.rad import RAD
+from TED.algorithms.drq import DrQ
+from TED.algorithms.svea import SVEA
 
 algorithm = {
 	'sac': SAC,

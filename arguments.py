@@ -1,6 +1,6 @@
 import argparse
 
-def parse_args():
+def parse_args(args_from_jupyter=None):
     parser = argparse.ArgumentParser()
 
     # environment
@@ -87,8 +87,11 @@ def parse_args():
     # svea
     parser.add_argument('--svea_alpha', default=0.5, type=float)
     parser.add_argument('--svea_beta', default=0.5, type=float)
-
-    args = parser.parse_args()
+    
+    if not args_from_jupyter is None:
+        args = parser.parse_args(args_from_jupyter)
+    else:
+        args = parser.parse_args()
 
     args.ted = eval(args.ted)
     args.save_video = eval(args.save_video)

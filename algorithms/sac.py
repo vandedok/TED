@@ -2,8 +2,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import utils
-from algorithms import modules
+import TED.utils as utils
+from TED.algorithms import modules
 
 class SAC(object):
     def __init__(self, obs_shape, action_shape, action_range, cfg):

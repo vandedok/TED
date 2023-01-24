@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
-import utils
-from algorithms.sac import SAC
+import TED.utils as utils
+from TED.algorithms.sac import SAC
 
 class DrQ(SAC):
 	def __init__(self, obs_shape, action_shape, action_range, cfg):
