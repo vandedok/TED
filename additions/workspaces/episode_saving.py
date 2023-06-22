@@ -8,10 +8,19 @@ import TED.utils as utils
 
 class EpisodeSaver():
     
-    def __init__(self, out_dir):
+    def __init__(self, out_dir, max_episodes=None, compress=False):
         self.set_out_dir(out_dir)
-        self.episode_id = -1
+        self.episode_id = -2
         self.reset()
+        if compress:
+            self.saiving_f = np.savez_compressed
+        else:
+            self.saiving_f = np.savez
+
+        self.max_episodes = max_episodes
+        self.oldest_episode = 0
+        self.saved_episodes = 0
+        self.file_ext = "npz"
 
     def set_out_dir(self, out_dir):
         self.out_dir = out_dir
@@ -31,19 +40,25 @@ class EpisodeSaver():
         
     def save(self):
         observations = np.stack(self.observations)
+        self.saved_episodes += 1
         actions = np.stack(self.actions)
         rewards = np.array(self.rewards)
         latents = np.stack(self.latents)
-        np.savez_compressed(
+        self.saiving_f(
             os.path.join(self.out_dir, str(self.episode_id)), 
             obs = observations, 
             acts=actions,
             rews=rewards,
             lats = latents,
         )
-        
-    
 
+        if not self.max_episodes is None and self.saved_episodes > self.max_episodes:
+            os.remove(os.path.join(self.out_dir, str(self.oldest_episode)) + "." + self.file_ext)
+            self.oldest_episode += 1
+    
+def ghost_pbar(x):
+    return x
+    
 class EpisodesSavingWorkspace(Workspace):
     
     def __init__(self, cfg):
@@ -54,14 +69,28 @@ class EpisodesSavingWorkspace(Workspace):
         self.episodes_dir_after = os.path.join(self.episodes_dir , "after")
         for dir_path in [self.episodes_dir, self.episodes_dir_before, self.episodes_dir_after]:
             os.makedirs(dir_path)           
-        self.episode_saver = EpisodeSaver(self.episodes_dir_before)
+        self.episode_saver_before = EpisodeSaver(
+            self.episodes_dir_before, 
+            compress=cfg.compress_saved_episodes,
+            max_episodes = cfg.max_episodes_to_save,
+            )
+        self.episode_saver_after = EpisodeSaver(
+            self.episodes_dir_after, 
+            compress=cfg.compress_saved_episodes,
+            max_episodes = cfg.max_episodes_to_save,
+            )
+        self.episodes_saver = self.episode_saver_before
 
-
-
-    def evaluate(self):
+    def is_train_env(self):
+        if self.step < self.cfg.num_train_steps:
+            return True
+        else:
+            return False
+        
+    def evaluate(self, pbar=ghost_pbar):
         average_episode_reward = 0
 
-        for episode in range(self.cfg.num_eval_episodes):
+        for episode in pbar(range(self.cfg.num_eval_episodes)):
 
             obs = self.env.reset()
 
@@ -71,6 +100,12 @@ class EpisodesSavingWorkspace(Workspace):
             episode_step = 0
 
             # reset episode_saver after the episdoe is finished
+            
+            if self.is_train_env():
+                self.episode_saver = self.episode_saver_before
+            else:
+                self.episode_saver = self.episode_saver_after
+
             self.episode_saver.reset()
 
             while not done:
@@ -78,10 +113,10 @@ class EpisodesSavingWorkspace(Workspace):
                     action = self.agent.act(obs, sample=False)
 
                 # collecting the latents for episode_saver
-                
-
+            
                 obs, reward, done, info = self.env.step(action)
-                lats = self.get_latents(obs)
+                # we are dealing with a batch of size [0]
+                lats = self.get_latents(obs)[0]
                 # adding s-a-r-l tuple to episode_saver
                 self.episode_saver.add(obs, action, reward, lats)
 
@@ -121,11 +156,6 @@ class EpisodesSavingWorkspace(Workspace):
 
         while self.step <= total_num_steps:
             if done:
-                # # save and reset episode_saver after the episdoe is finished
-                # if self.step > 0:
-                #     self.episode_saver.save()
-                #     self.episode_saver.reset()
-                
                 if self.step > 0:
                     self.logger.log('train/duration', time.time() - start_time, self.step)
                     start_time = time.time()
@@ -194,7 +224,7 @@ class EpisodesSavingWorkspace(Workspace):
                 print("Switching to test env")
                 self.env = self.test_env
                 # Changing test_env_tracker for  episode_saver after the episdoe is finished
-                self.episode_saver.set_out_dir(self.episodesdir_after)
+                self.episode_saver.set_out_dir(self.episodes_dir_after)
 
                 done = True
     
