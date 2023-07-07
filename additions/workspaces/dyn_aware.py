@@ -17,6 +17,8 @@ class DynAwareWorkspace(EpisodesSavingWorkspace):
         self.dyn_model_logs_dir = os.path.join(self.work_dir, "dyn_model")
         
 
+        
+
 
     def evaluate(self):
         super().evaluate()
