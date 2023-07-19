@@ -1,1 +1,2 @@
-from .dyn_aware import DynAwareSAC
+from .sac import DynAwareSAC
+from .rad import DynAwareRAD

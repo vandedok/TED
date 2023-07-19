@@ -1,2 +1,2 @@
 from  .workspaces import EpisodesSavingWorkspace, ExternalAgentWorkspace
-from .algorithms import DynAwareSAC
+from .algorithms import DynAwareSAC, DynAwareRAD
