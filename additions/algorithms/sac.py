@@ -137,9 +137,9 @@ class DynAwareSAC(object):
         self.actor.train(training)
         self.critic.train(training)
         if self.ted:
-            self.ted_classifier.train()
+            self.ted_classifier.train(training)
         if self.dyn_aware:
-            self.dyn_model.train()
+            self.dyn_model.train(training)
 
 
     @property
@@ -155,7 +155,16 @@ class DynAwareSAC(object):
         action = action.clamp(*self.action_range)
         assert action.ndim == 2 and action.shape[0] == 1
         return utils.to_np(action[0])
+    
+    # def act_and_pred_next(self, obs, sample=False):
+    #     obs = torch.FloatTensor(obs).to(self.device)
+    #     obs = obs.unsqueeze(0)
 
+    #     dist = self.actor(obs)
+    #     action = dist.sample() if sample else dist.mean
+    #     action = action.clamp(*self.action_range)
+    #     assert action.ndim == 2 and action.shape[0] == 1
+    #     return utils.to_np(action[0])
 
     def update_critic(self, obs, action, reward, next_obs, not_done, logger, step):
         with torch.no_grad():
@@ -245,22 +254,39 @@ class DynAwareSAC(object):
         ted_loss.backward(retain_graph = self.ted_retain_graph)
         self.ted_optimizer.step()
 
-    def update_dyn_model(self, obs, next_obs, action, reward, logger, step):
-
+    def get_diff_lat_and_reward_losses(self, obs, next_obs, action, reward, scale_diff=False):
+        
         obs_rep = self.critic.encoder(obs)
         with torch.no_grad():
             next_obs_rep = self.critic_target.encoder(next_obs)
-            diff_gt = (next_obs_rep - torch.detach(obs_rep)) * self.dyn_lat_dif_scaling
+            diff_gt = (next_obs_rep - torch.detach(obs_rep)) 
+            if scale_diff:
+                diff_gt = diff_gt * self.dyn_lat_dif_scaling
 
         diff_pred, reward_pred = self.dyn_model(obs_rep, action)
-
+        # print("shapes:", reward_pred.shape, reward.shape)
         dyn_lat_diff_loss = self.dyn_lat_loss(diff_gt, diff_pred)
         dyn_rew_loss = self.dyn_rew_loss(reward, reward_pred)
+        return dyn_lat_diff_loss, dyn_rew_loss
+
+    def update_dyn_model(self, obs, next_obs, action, reward, logger, step):
+
+        # obs_rep = self.critic.encoder(obs)
+        # with torch.no_grad():
+        #     next_obs_rep = self.critic_target.encoder(next_obs)
+        #     diff_gt = (next_obs_rep - torch.detach(obs_rep)) * self.dyn_lat_dif_scaling
+
+        # diff_pred, reward_pred = self.dyn_model(obs_rep, action)
+
+        # dyn_lat_diff_loss = self.dyn_lat_loss(diff_gt, diff_pred)
+        # dyn_rew_loss = self.dyn_rew_loss(reward, reward_pred)
+        # loss = self.dyn_lat_coef * dyn_lat_diff_loss + self.dyn_rew_coef * dyn_rew_loss
+        dyn_lat_diff_loss, dyn_rew_loss = self.get_diff_lat_and_reward_losses(obs, next_obs,action, reward, scale_diff=True)
         loss = self.dyn_lat_coef * dyn_lat_diff_loss + self.dyn_rew_coef * dyn_rew_loss
         loss.backward()
         self.dyn_model_optimizer.step()
    
-        logger.log('train_dyn/dyn_lat_diff_loss', dyn_lat_diff_loss, step)
+        logger.log('train_dyn/dyn_lat_diff_loss', dyn_lat_diff_loss/self.dyn_lat_dif_scaling**2, step)
         logger.log('train_dyn/dyn_rew_loss', dyn_rew_loss, step)
 
     def replay_buffer_sample(self, replay_buffer):
